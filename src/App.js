@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
 import { BsCheck2Circle } from "react-icons/bs";
+import { BsEmojiWinkFill } from "react-icons/bs";
+import { FaGrinTongueWink } from "react-icons/fa";
 
 /* ethers 変数を使えるようにする*/
 import { ethers } from "ethers";
 /* ABIファイルを含むWavePortal.jsonファイルをインポートする*/
 import abi from "./utils/WavePortal.json";
 import { Card } from "./components/Card";
+import { Loader } from "./components/Loader";
 
 const App = () => {
   /* ユーザーのパブリックウォレットを保存するために使用する状態変数を定義 */
@@ -16,9 +19,12 @@ const App = () => {
   /* すべてのwavesを保存する状態変数を定義 */
   const [allWaves, setAllWaves] = useState([]);
   console.log("currentAccount: ", currentAccount);
+  const [loader, setLoader] = useState(false)
   const [totalWaves, setTotalWaves] = useState();
+  const [winAlert, setWinAlert] = useState(false);
+  const [loseAlert, setLoseAlert] = useState(false);
   /* デプロイされたコントラクトのアドレスを保持する変数を作成 */
-  const contractAddress = "0xd4DF7998C3e7b52C8F502614D10c2D67aac495c2";
+  const contractAddress = "0x8a4a6D986884ea202C68C345d221a4e45c4fd2dD";
   //const contractAddress = "0x1dA6C423D854802499b660f9Ba17C356bbc8fBA9";
   /* コントラクトからすべてのwavesを取得するメソッドを作成 */
   /* ABIの内容を参照する変数を作成 */
@@ -61,7 +67,7 @@ const App = () => {
   /**
    * `emit`されたイベントをフロントエンドに反映させる
    */
-  useEffect(async () => {
+  useEffect( () => {
     let wavePortalContract;
 
     const onNewWave = (from, timestamp, message) => {
@@ -86,6 +92,9 @@ const App = () => {
         contractABI,
         signer
       );
+      console.log("wavePortalContract");
+      console.log(wavePortalContract);
+
       wavePortalContract.on("NewWave", onNewWave);
     }
     /*メモリリークを防ぐために、NewWaveのイベントを解除します*/
@@ -165,9 +174,13 @@ const App = () => {
         const waveTxn = await wavePortalContract.wave(messageValue, {
           gasLimit: 300000,
         });
+        setLoader(true)
+        console.log("provider.getCode(address)");
+        console.log(provider.getCode(contractAddress));
         console.log("Mining...", waveTxn.hash);
         await waveTxn.wait();
         console.log("Mined -- ", waveTxn.hash);
+        setLoader(false);
         count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
         setTotalWaves(count.toNumber());
@@ -179,8 +192,10 @@ const App = () => {
         if (contractBalance_post < contractBalance) {
           /* 減っていたら下記を出力 */
           console.log("User won ETH!");
+          setWinAlert(true)
         } else {
           console.log("User didn't win ETH.");
+          setLoseAlert(true);
         }
         console.log(
           "Contract balance after wave:",
@@ -188,9 +203,13 @@ const App = () => {
         );
       } else {
         console.log("Ethereum object doesn't exist!");
+        setLoader(false);
+        alert("Ethereum object doesn't exist!");
       }
     } catch (error) {
       console.log(error);
+      setLoader(false);
+      alert("Transaction failed.");
     }
   };
 
@@ -198,6 +217,14 @@ const App = () => {
   useEffect(() => {
     checkIfWalletIsConnected();
   }, []);
+
+  //win lose alert
+  useEffect(() => {
+    setTimeout(() => {
+      setWinAlert(false)
+      setLoseAlert(false)
+    }, 5000);
+  }, [winAlert, loseAlert]);
 
   return (
     <div className="mainContainer">
@@ -215,9 +242,27 @@ const App = () => {
           </span>
         </div>
         <br />
-        {currentAccount && <>
-          <p>total wave : {totalWaves}</p>
-        </>}
+        {winAlert && (
+          <div class="alert alert-success shadow-lg mb-5 text-yellow-200">
+            <div>
+              <BsEmojiWinkFill />
+              <span>Conglaturation!! You Win 0.001ETH!</span>
+            </div>
+          </div>
+        )}
+        {loseAlert && (
+          <div class="alert alert-error shadow-lg mb-5 text-yellow-200">
+            <div>
+              <FaGrinTongueWink />
+              <span>Oops!! You lose...</span>
+            </div>
+          </div>
+        )}
+        {currentAccount && (
+          <>
+            <p>total wave : {totalWaves}</p>
+          </>
+        )}
         {/* ウォレットコネクトのボタンを実装 */}
         <div className="flex flex-col gap-3 mb-5">
           {!currentAccount && (
@@ -256,6 +301,11 @@ const App = () => {
             <button className="waveButton btn btn-active" onClick={wave}>
               Wave at Me
             </button>
+          )}
+          {loader && (
+            <div className="flex justify-center items-center">
+              <Loader />
+            </div>
           )}
         </div>
         {/* 履歴を表示する */}
