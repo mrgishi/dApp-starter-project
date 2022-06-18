@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
+import { BsCheck2Circle } from "react-icons/bs";
+
 /* ethers 変数を使えるようにする*/
 import { ethers } from "ethers";
 /* ABIファイルを含むWavePortal.jsonファイルをインポートする*/
 import abi from "./utils/WavePortal.json";
+import { Card } from "./components/Card";
 
 const App = () => {
   /* ユーザーのパブリックウォレットを保存するために使用する状態変数を定義 */
@@ -13,6 +16,7 @@ const App = () => {
   /* すべてのwavesを保存する状態変数を定義 */
   const [allWaves, setAllWaves] = useState([]);
   console.log("currentAccount: ", currentAccount);
+  const [totalWaves, setTotalWaves] = useState();
   /* デプロイされたコントラクトのアドレスを保持する変数を作成 */
   const contractAddress = "0xd4DF7998C3e7b52C8F502614D10c2D67aac495c2";
   //const contractAddress = "0x1dA6C423D854802499b660f9Ba17C356bbc8fBA9";
@@ -44,6 +48,7 @@ const App = () => {
         });
         /* React Stateにデータを格納する */
         setAllWaves(wavesCleaned);
+        setTotalWaves(wavesCleaned.length);
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -52,10 +57,11 @@ const App = () => {
     }
   };
 
+
   /**
    * `emit`されたイベントをフロントエンドに反映させる
    */
-  useEffect(() => {
+  useEffect(async () => {
     let wavePortalContract;
 
     const onNewWave = (from, timestamp, message) => {
@@ -146,6 +152,7 @@ const App = () => {
         );
         let count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
+        setTotalWaves(count.toNumber());
         //コントラクトの残高を取得
         let contractBalance = await provider.getBalance(
           wavePortalContract.address
@@ -163,6 +170,7 @@ const App = () => {
         console.log("Mined -- ", waveTxn.hash);
         count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
+        setTotalWaves(count.toNumber());
         //ユーザーが ETH を獲得したか検証
         let contractBalance_post = await provider.getBalance(
           wavePortalContract.address
@@ -201,63 +209,74 @@ const App = () => {
           WELCOME!
         </div>
         <div className="bio">
-          イーサリアムウォレットを接続して、メッセージを作成したら、
-          <span role="img" aria-label="hand-wave">
-            👋
-          </span>
-          を送ってください
+          Connect your ETH wallet and wave at me!!
           <span role="img" aria-label="shine">
             ✨
           </span>
         </div>
         <br />
+        {currentAccount && <>
+          <p>total wave : {totalWaves}</p>
+        </>}
         {/* ウォレットコネクトのボタンを実装 */}
-        {!currentAccount && (
-          <button className="waveButton" onClick={connectWallet}>
-            Connect Wallet
-          </button>
-        )}
-        {currentAccount && (
-          <button className="waveButton">Wallet Connected</button>
-        )}
-        {/* waveボタンにwave関数を連動 */}
-        {currentAccount && (
-          <button className="waveButton" onClick={wave}>
-            Wave at Me
-          </button>
-        )}
-        {/* メッセージボックスを実装*/}
-        {currentAccount && (
-          <textarea
-            name="messageArea"
-            placeholder="メッセージはこちら"
-            type="text"
-            id="message"
-            value={messageValue}
-            onChange={(e) => setMessageValue(e.target.value)}
-          />
-        )}
-        {/* 履歴を表示する */}
-        {currentAccount &&
-          allWaves
-            .slice(0)
-            .reverse()
-            .map((wave, index) => {
-              return (
-                <div
-                  key={index}
-                  style={{
-                    backgroundColor: "#F8F8FF",
-                    marginTop: "16px",
-                    padding: "8px",
-                  }}
-                >
-                  <div>Address: {wave.address}</div>
-                  <div>Time: {wave.timestamp.toString()}</div>
-                  <div>Message: {wave.message}</div>
+        <div className="flex flex-col gap-3 mb-5">
+          {!currentAccount && (
+            <button
+              className="waveButton btn btn-active"
+              onClick={connectWallet}
+            >
+              Connect Wallet
+            </button>
+          )}
+          {currentAccount && (
+            <>
+              <p>Your wallet: {currentAccount}</p>
+              <div className="alert shadow-lg">
+                <div>
+                  <BsCheck2Circle />
+                  <span>Wallet connected.</span>
                 </div>
-              );
-            })}
+              </div>
+            </>
+          )}
+          {/* メッセージボックスを実装*/}
+          {currentAccount && (
+            <textarea
+              name="messageArea"
+              placeholder="メッセージはこちら"
+              type="text"
+              id="message"
+              className="textarea textarea-bordered"
+              value={messageValue}
+              onChange={(e) => setMessageValue(e.target.value)}
+            />
+          )}
+          {/* waveボタンにwave関数を連動 */}
+          {currentAccount && (
+            <button className="waveButton btn btn-active" onClick={wave}>
+              Wave at Me
+            </button>
+          )}
+        </div>
+        {/* 履歴を表示する */}
+        <div className="flex flex-col gap-4">
+          {currentAccount &&
+            allWaves
+              .slice(0)
+              .reverse()
+              .map((wave, index) => {
+                return (
+                  <div key={index}>
+                    <Card
+                      index={index}
+                      address={wave.address}
+                      time={wave.timestamp.toString()}
+                      message={wave.message}
+                    />
+                  </div>
+                );
+              })}
+        </div>
       </div>
     </div>
   );

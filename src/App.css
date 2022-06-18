@@ -1,34 +1,32 @@
 .mainContainer {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  margin-top: 64px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 64px;
 }
 
 .dataContainer {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 600px;
 }
 
 .header {
-  text-align: center;
-  font-size: 32px;
-  font-weight: 600;
+    font-weight: 600;
+    font-size: 32px;
+    text-align: center;
 }
 
 .bio {
-  text-align: center;
-  color: gray;
-  margin-top: 16px;
+    margin-top: 16px;
+    color: gray;
+    text-align: center;
 }
 
 .waveButton {
-  cursor: pointer;
-  margin-top: 16px;
-  padding: 8px;
-  border: 0;
-  border-radius: 5px;
-  
+    padding: 8px;
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
 }
